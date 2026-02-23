@@ -10,9 +10,10 @@ import Animated, {
   runOnJS,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
-import { Heart, Clock, Star } from "lucide-react-native";
+import { Heart, Clock, Star, Lock } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useRecipeStore } from "@/store/useRecipeStore";
+import { useProStore } from "@/store/useProStore";
 import { COLORS, SHADOWS } from "@/constants/theme";
 import type { Recipe } from "@/constants/recipes";
 
@@ -29,7 +30,9 @@ interface RecipeCardProps {
 export default function RecipeCard({ recipe, index = 0 }: RecipeCardProps) {
   const router = useRouter();
   const { isFavorite, toggleFavorite } = useRecipeStore();
+  const { isPro } = useProStore();
   const favorited = isFavorite(recipe.id);
+  const isLocked = recipe.isPro && !isPro;
 
   const cardScale = useSharedValue(1);
   const heartScale = useSharedValue(1);
@@ -86,7 +89,7 @@ export default function RecipeCard({ recipe, index = 0 }: RecipeCardProps) {
         cardAnimStyle,
         {
           width: CARD_WIDTH,
-          backgroundColor: "#FFFFFF",
+          backgroundColor: COLORS.bgCard,
           borderRadius: 24,
           overflow: "hidden",
           marginBottom: 16,
@@ -94,7 +97,6 @@ export default function RecipeCard({ recipe, index = 0 }: RecipeCardProps) {
         },
       ]}
     >
-      {/* Image */}
       <View style={{ position: "relative" }}>
         <Image
           source={{ uri: recipe.image }}
@@ -102,6 +104,25 @@ export default function RecipeCard({ recipe, index = 0 }: RecipeCardProps) {
           contentFit="cover"
           transition={300}
         />
+
+        {/* Lock overlay for pro */}
+        {isLocked && (
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.4)",
+              borderRadius: 24,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Lock size={24} color={COLORS.gold} />
+          </View>
+        )}
 
         {/* Heart button */}
         <Pressable
@@ -113,7 +134,7 @@ export default function RecipeCard({ recipe, index = 0 }: RecipeCardProps) {
             width: 36,
             height: 36,
             borderRadius: 18,
-            backgroundColor: "rgba(255,255,255,0.9)",
+            backgroundColor: COLORS.bgCard + "CC",
             alignItems: "center",
             justifyContent: "center",
           }}
@@ -121,21 +142,17 @@ export default function RecipeCard({ recipe, index = 0 }: RecipeCardProps) {
           <Animated.View style={heartAnimStyle}>
             <Heart
               size={18}
-              color={favorited ? "#FF69B4" : "#D1D5DB"}
-              fill={favorited ? "#FF69B4" : "transparent"}
+              color={favorited ? COLORS.hotpink : COLORS.gray}
+              fill={favorited ? COLORS.hotpink : "transparent"}
             />
           </Animated.View>
-          {/* Heart burst effect */}
           <Animated.Text
             style={[
               heartBurstStyle,
-              {
-                position: "absolute",
-                fontSize: 20,
-              },
+              { position: "absolute", fontSize: 20 },
             ]}
           >
-            💖
+            🐾
           </Animated.Text>
         </Pressable>
 
@@ -154,20 +171,38 @@ export default function RecipeCard({ recipe, index = 0 }: RecipeCardProps) {
             gap: 4,
           }}
         >
-          <Clock size={12} color="#FFFFFF" />
-          <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "700" }}>
+          <Clock size={12} color="#FFF" />
+          <Text style={{ color: "#FFF", fontSize: 11, fontWeight: "700" }}>
             {recipe.time}
           </Text>
         </View>
+
+        {/* Pro badge */}
+        {recipe.isPro && (
+          <View
+            style={{
+              position: "absolute",
+              top: 10,
+              left: 10,
+              backgroundColor: COLORS.gold,
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+              borderRadius: 8,
+            }}
+          >
+            <Text style={{ fontSize: 9, fontWeight: "800", color: COLORS.bg }}>
+              PRO
+            </Text>
+          </View>
+        )}
       </View>
 
-      {/* Content */}
       <View style={{ padding: 12 }}>
         <Text
           style={{
             fontSize: 14,
             fontWeight: "700",
-            color: COLORS.dark,
+            color: COLORS.white,
             marginBottom: 6,
           }}
           numberOfLines={2}
@@ -175,16 +210,9 @@ export default function RecipeCard({ recipe, index = 0 }: RecipeCardProps) {
           {recipe.title}
         </Text>
 
-        {/* Rating */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-          <Star size={13} color="#FDE68A" fill="#FDE68A" />
-          <Text
-            style={{
-              fontSize: 12,
-              fontWeight: "600",
-              color: COLORS.dark,
-            }}
-          >
+          <Star size={13} color={COLORS.butter} fill={COLORS.butter} />
+          <Text style={{ fontSize: 12, fontWeight: "600", color: COLORS.white }}>
             {recipe.rating}
           </Text>
           <Text style={{ fontSize: 11, color: COLORS.gray }}>

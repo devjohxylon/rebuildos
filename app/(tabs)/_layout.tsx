@@ -1,17 +1,8 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { View, Text, Pressable } from "react-native";
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-  withSequence,
-} from "react-native-reanimated";
+import { View, Text } from "react-native";
 import { Home, Search, Heart, ChefHat } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
 import { COLORS } from "@/constants/theme";
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface TabIconProps {
   icon: React.ReactNode;
@@ -34,7 +25,7 @@ function TabIcon({ icon, label, focused }: TabIconProps) {
           width: 44,
           height: 32,
           borderRadius: 16,
-          backgroundColor: focused ? COLORS.hotpink + "20" : "transparent",
+          backgroundColor: focused ? COLORS.hotpink + "25" : "transparent",
           alignItems: "center",
           justifyContent: "center",
         }}
@@ -60,13 +51,13 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: COLORS.white,
+          backgroundColor: COLORS.bgCard,
           borderTopWidth: 0,
           height: 85,
           paddingBottom: 20,
           shadowColor: COLORS.hotpink,
           shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.08,
+          shadowOpacity: 0.15,
           shadowRadius: 16,
           elevation: 8,
           borderTopLeftRadius: 24,

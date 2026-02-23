@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, ScrollView } from "react-native";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,15 +11,19 @@ import SparkleBackground from "@/components/SparkleBackground";
 
 export default function FavoritesScreen() {
   const insets = useSafeAreaInsets();
-  const { favorites } = useRecipeStore();
+  const { favorites, customRecipes } = useRecipeStore();
 
-  const favoriteRecipes = RECIPES.filter((r) => favorites.includes(r.id));
+  const allRecipes = useMemo(
+    () => [...RECIPES, ...customRecipes],
+    [customRecipes]
+  );
+
+  const favoriteRecipes = allRecipes.filter((r) => favorites.includes(r.id));
 
   return (
-    <View style={{ flex: 1, backgroundColor: COLORS.pink }}>
+    <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
       <SparkleBackground count={6} />
 
-      {/* Header */}
       <View
         style={{
           paddingTop: insets.top + 8,
@@ -27,22 +31,10 @@ export default function FavoritesScreen() {
           paddingBottom: 12,
         }}
       >
-        <Text
-          style={{
-            fontSize: 24,
-            fontWeight: "800",
-            color: COLORS.dark,
-          }}
-        >
-          My Favorites 💖
+        <Text style={{ fontSize: 24, fontWeight: "800", color: COLORS.white }}>
+          My Favorites 🐱
         </Text>
-        <Text
-          style={{
-            fontSize: 13,
-            color: COLORS.gray,
-            marginTop: 4,
-          }}
-        >
+        <Text style={{ fontSize: 13, color: COLORS.gray, marginTop: 4 }}>
           {favoriteRecipes.length} saved recipe
           {favoriteRecipes.length !== 1 ? "s" : ""}
         </Text>
@@ -68,8 +60,8 @@ export default function FavoritesScreen() {
                 paddingHorizontal: 40,
               }}
             >
-              Tap the 💖 on any recipe to save it here. Wishy will keep them
-              safe for you!
+              Tap the heart on any recipe to save it here. Kitty will keep them
+              safe for you! 🐾
             </Text>
           </Animated.View>
         ) : (

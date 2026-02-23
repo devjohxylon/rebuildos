@@ -34,7 +34,7 @@ export default function SkeletonCard() {
     <View
       style={{
         width: CARD_WIDTH,
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.bgCard,
         borderRadius: 24,
         overflow: "hidden",
         marginBottom: 16,
@@ -51,7 +51,7 @@ export default function SkeletonCard() {
           {
             width: "100%",
             height: CARD_WIDTH * 0.85,
-            backgroundColor: COLORS.blush,
+            backgroundColor: COLORS.bgElevated,
             borderRadius: 24,
           },
         ]}
@@ -63,7 +63,7 @@ export default function SkeletonCard() {
             {
               width: "80%",
               height: 14,
-              backgroundColor: COLORS.blush,
+              backgroundColor: COLORS.bgElevated,
               borderRadius: 8,
               marginBottom: 8,
             },
@@ -75,7 +75,7 @@ export default function SkeletonCard() {
             {
               width: "50%",
               height: 10,
-              backgroundColor: COLORS.blush,
+              backgroundColor: COLORS.bgElevated,
               borderRadius: 6,
             },
           ]}

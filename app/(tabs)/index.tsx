@@ -1,14 +1,18 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   View,
   Text,
   ScrollView,
   RefreshControl,
-  Dimensions,
+  Pressable,
 } from "react-native";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
+import { useRouter } from "expo-router";
+import { Crown } from "lucide-react-native";
 import { COLORS } from "@/constants/theme";
 import { RECIPES, CATEGORIES } from "@/constants/recipes";
+import { useRecipeStore } from "@/store/useRecipeStore";
+import { useProStore } from "@/store/useProStore";
 import Header from "@/components/Header";
 import HeroBanner from "@/components/HeroBanner";
 import CategoryChip from "@/components/CategoryChip";
@@ -16,12 +20,13 @@ import RecipeCard from "@/components/RecipeCard";
 import SkeletonCard from "@/components/SkeletonCard";
 import SparkleBackground from "@/components/SparkleBackground";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-
 export default function HomeScreen() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const { isPro } = useProStore();
+  const { customRecipes } = useRecipeStore();
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 1200);
@@ -37,13 +42,21 @@ export default function HomeScreen() {
     }, 1500);
   }, []);
 
-  const filteredRecipes =
-    activeCategory === "all"
-      ? RECIPES
-      : RECIPES.filter((r) => r.category === activeCategory);
+  const allRecipes = useMemo(
+    () => [...RECIPES, ...customRecipes],
+    [customRecipes]
+  );
+
+  const filteredRecipes = useMemo(() => {
+    const results =
+      activeCategory === "all"
+        ? allRecipes
+        : allRecipes.filter((r) => r.category === activeCategory);
+    return results;
+  }, [activeCategory, allRecipes]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: COLORS.pink }}>
+    <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
       <SparkleBackground count={8} />
       <Header />
       <ScrollView
@@ -58,21 +71,52 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* Hero Banner */}
         <HeroBanner />
 
-        {/* Categories */}
+        {!isPro && (
+          <Animated.View entering={FadeIn.delay(300).duration(600)}>
+            <Pressable
+              onPress={() => router.push("/pro")}
+              style={{
+                marginHorizontal: 16,
+                marginBottom: 16,
+                backgroundColor: COLORS.bgCard,
+                borderRadius: 20,
+                padding: 16,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 12,
+                borderWidth: 1,
+                borderColor: COLORS.gold + "40",
+              }}
+            >
+              <Text style={{ fontSize: 28 }}>👑</Text>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{ fontSize: 15, fontWeight: "800", color: COLORS.gold }}
+                >
+                  Unlock All Recipes
+                </Text>
+                <Text style={{ fontSize: 12, color: COLORS.gray, marginTop: 2 }}>
+                  Get access to 150+ exclusive baking recipes
+                </Text>
+              </View>
+              <Crown size={20} color={COLORS.gold} />
+            </Pressable>
+          </Animated.View>
+        )}
+
         <Animated.View entering={FadeInDown.delay(200).duration(600)}>
           <Text
             style={{
               fontSize: 18,
               fontWeight: "800",
-              color: COLORS.dark,
+              color: COLORS.white,
               marginHorizontal: 16,
               marginBottom: 12,
             }}
           >
-            Categories ✨
+            Categories
           </Text>
           <ScrollView
             horizontal
@@ -91,7 +135,6 @@ export default function HomeScreen() {
           </ScrollView>
         </Animated.View>
 
-        {/* Trending Sweeties */}
         <Animated.View
           entering={FadeInDown.delay(400).duration(600)}
           style={{ marginTop: 24, paddingHorizontal: 16 }}
@@ -104,27 +147,14 @@ export default function HomeScreen() {
               marginBottom: 16,
             }}
           >
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "800",
-                color: COLORS.dark,
-              }}
-            >
-              Trending Sweeties 🍰
+            <Text style={{ fontSize: 18, fontWeight: "800", color: COLORS.white }}>
+              Trending Sweeties 🐱
             </Text>
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: "600",
-                color: COLORS.hotpink,
-              }}
-            >
-              See all
+            <Text style={{ fontSize: 13, fontWeight: "600", color: COLORS.hotpink }}>
+              {filteredRecipes.length} recipes
             </Text>
           </View>
 
-          {/* Recipe Grid */}
           {loading ? (
             <View
               style={{
@@ -148,7 +178,7 @@ export default function HomeScreen() {
               {filteredRecipes.map((recipe, index) => (
                 <Animated.View
                   key={recipe.id}
-                  entering={FadeInDown.delay(index * 100).duration(500)}
+                  entering={FadeInDown.delay(index * 80).duration(500)}
                 >
                   <RecipeCard recipe={recipe} index={index} />
                 </Animated.View>

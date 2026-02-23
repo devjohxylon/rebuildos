@@ -5,7 +5,6 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withSequence,
-  runOnJS,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 import { COLORS, SHADOWS } from "@/constants/theme";
@@ -51,7 +50,7 @@ export default function CategoryChip({
           paddingHorizontal: 18,
           paddingVertical: 10,
           borderRadius: 25,
-          backgroundColor: isActive ? COLORS.hotpink : COLORS.white,
+          backgroundColor: isActive ? COLORS.hotpink : COLORS.bgCard,
           marginRight: 10,
           gap: 6,
           ...(isActive ? SHADOWS.button : SHADOWS.soft),
@@ -63,7 +62,7 @@ export default function CategoryChip({
         style={{
           fontSize: 14,
           fontWeight: "700",
-          color: isActive ? COLORS.white : COLORS.dark,
+          color: isActive ? "#FFF" : COLORS.white,
         }}
       >
         {label}

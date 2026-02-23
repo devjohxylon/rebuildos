@@ -6,11 +6,10 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
-  withSpring,
   FadeIn,
 } from "react-native-reanimated";
 import { COLORS } from "@/constants/theme";
-import Wishy from "./Wishy";
+import { SHADOWS } from "@/constants/theme";
 
 export default function HeroBanner() {
   const sparkle1 = useSharedValue(0);
@@ -49,7 +48,7 @@ export default function HeroBanner() {
     <Animated.View
       entering={FadeIn.duration(800)}
       style={{
-        backgroundColor: COLORS.white,
+        backgroundColor: COLORS.bgCard,
         borderRadius: 28,
         padding: 24,
         marginHorizontal: 16,
@@ -57,11 +56,7 @@ export default function HeroBanner() {
         marginBottom: 16,
         flexDirection: "row",
         alignItems: "center",
-        shadowColor: "#FF69B4",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.12,
-        shadowRadius: 20,
-        elevation: 6,
+        ...SHADOWS.card,
       }}
     >
       <View style={{ flex: 1 }}>
@@ -70,14 +65,14 @@ export default function HeroBanner() {
             style={{
               fontSize: 22,
               fontWeight: "800",
-              color: COLORS.dark,
+              color: COLORS.white,
               lineHeight: 30,
             }}
           >
             What are we
           </Text>
           <Animated.Text style={[sparkle1Style, { fontSize: 18 }]}>
-            ✨
+            🐾
           </Animated.Text>
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
@@ -92,7 +87,7 @@ export default function HeroBanner() {
             baking today?
           </Text>
           <Animated.Text style={[sparkle2Style, { fontSize: 18 }]}>
-            🧁
+            🐱
           </Animated.Text>
         </View>
         <Text
@@ -103,10 +98,10 @@ export default function HeroBanner() {
             lineHeight: 18,
           }}
         >
-          Discover magical recipes with Wishy!
+          Discover purrfect recipes with Kitty~
         </Text>
       </View>
-      <Wishy size="large" showSparkles />
+      <Text style={{ fontSize: 64 }}>🐱</Text>
     </Animated.View>
   );
 }

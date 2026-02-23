@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import type { Recipe } from "@/constants/recipes";
 
 interface RecipeStore {
   favorites: string[];
@@ -10,6 +11,9 @@ interface RecipeStore {
   toggleIngredient: (recipeId: string, index: number) => void;
   isIngredientChecked: (recipeId: string, index: number) => boolean;
   clearCheckedIngredients: (recipeId: string) => void;
+  customRecipes: Recipe[];
+  addCustomRecipe: (recipe: Recipe) => void;
+  removeCustomRecipe: (id: string) => void;
 }
 
 export const useRecipeStore = create<RecipeStore>()(
@@ -58,11 +62,27 @@ export const useRecipeStore = create<RecipeStore>()(
         });
         set({ checkedIngredients: newChecked });
       },
+
+      customRecipes: [],
+
+      addCustomRecipe: (recipe: Recipe) => {
+        set({ customRecipes: [...get().customRecipes, recipe] });
+      },
+
+      removeCustomRecipe: (id: string) => {
+        set({
+          customRecipes: get().customRecipes.filter((r) => r.id !== id),
+          favorites: get().favorites.filter((fId) => fId !== id),
+        });
+      },
     }),
     {
       name: "whisk-wishes-storage",
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ favorites: state.favorites }),
+      partialize: (state) => ({
+        favorites: state.favorites,
+        customRecipes: state.customRecipes,
+      }),
     }
   )
 );

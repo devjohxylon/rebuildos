@@ -6,7 +6,6 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
-  withDelay,
 } from "react-native-reanimated";
 import { useEffect } from "react";
 
@@ -23,7 +22,6 @@ export default function Wishy({
 }: WishyProps) {
   const bounce = useSharedValue(0);
   const sparkleOpacity = useSharedValue(0.5);
-  const blushScale = useSharedValue(1);
 
   const sizeMap = {
     small: 40,
@@ -53,15 +51,6 @@ export default function Wishy({
       withSequence(
         withTiming(1, { duration: 600 }),
         withTiming(0.3, { duration: 600 })
-      ),
-      -1,
-      true
-    );
-
-    blushScale.value = withRepeat(
-      withSequence(
-        withDelay(2000, withTiming(1.15, { duration: 300 })),
-        withTiming(1, { duration: 300 })
       ),
       -1,
       true
@@ -105,7 +94,7 @@ export default function Wishy({
                 },
               ]}
             >
-              ✨
+              🐾
             </Animated.Text>
             <Animated.Text
               style={[
@@ -122,7 +111,7 @@ export default function Wishy({
             </Animated.Text>
           </>
         )}
-        <Text style={{ fontSize: fSize, textAlign: "center" }}>🧁</Text>
+        <Text style={{ fontSize: fSize, textAlign: "center" }}>🐱</Text>
       </Animated.View>
       {message && (
         <Text

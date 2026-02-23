@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -13,11 +13,10 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withSequence,
-  withTiming,
   FadeInDown,
   FadeIn,
-  runOnJS,
   SlideInDown,
+  runOnJS,
 } from "react-native-reanimated";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -33,11 +32,15 @@ import {
   Star,
   Check,
   Share2,
+  Lock,
+  Crown,
 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { COLORS, SHADOWS } from "@/constants/theme";
 import { RECIPES } from "@/constants/recipes";
 import { useRecipeStore } from "@/store/useRecipeStore";
+import { useProStore } from "@/store/useProStore";
+import { scaleIngredient } from "@/utils/scaleIngredient";
 import FloatingHearts from "@/components/FloatingHearts";
 import ConfettiExplosion from "@/components/ConfettiExplosion";
 
@@ -48,7 +51,14 @@ export default function RecipeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const recipe = RECIPES.find((r) => r.id === id);
+  const { isPro } = useProStore();
+  const { customRecipes } = useRecipeStore();
+
+  const allRecipes = useMemo(
+    () => [...RECIPES, ...customRecipes],
+    [customRecipes]
+  );
+  const recipe = allRecipes.find((r) => r.id === id);
 
   const { isFavorite, toggleFavorite, toggleIngredient, isIngredientChecked } =
     useRecipeStore();
@@ -61,11 +71,10 @@ export default function RecipeDetailScreen() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const favorited = recipe ? isFavorite(recipe.id) : false;
+  const isLocked = recipe?.isPro && !isPro;
 
-  // Animations
   const heartScale = useSharedValue(1);
   const backScale = useSharedValue(1);
-  const headerOpacity = useSharedValue(0);
 
   const heartAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: heartScale.value }],
@@ -75,7 +84,6 @@ export default function RecipeDetailScreen() {
     transform: [{ scale: backScale.value }],
   }));
 
-  // Cleanup timer
   useEffect(() => {
     return () => {
       if (timerRef.current) {
@@ -113,7 +121,7 @@ export default function RecipeDetailScreen() {
   const adjustServings = useCallback(
     (delta: number) => {
       const newVal = servings + delta;
-      if (newVal >= 1 && newVal <= 24) {
+      if (newVal >= 1 && newVal <= 50) {
         setServings(newVal);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
@@ -123,13 +131,10 @@ export default function RecipeDetailScreen() {
 
   const startTimer = useCallback(() => {
     if (!recipe) return;
-
-    // Parse time string to get minutes
     const minutes = parseInt(recipe.time) || 1;
     const totalSeconds = minutes * 60;
 
     if (timerRunning) {
-      // Stop timer
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -154,9 +159,9 @@ export default function RecipeDetailScreen() {
           setConfettiTrigger((t) => t + 1);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           Alert.alert(
-            "🎉 Time's Up!",
-            `Your ${recipe.title} should be ready! Wishy is so excited! 🧁✨`,
-            [{ text: "Yay! 🩷" }]
+            "Time's Up! 🐱",
+            `Your ${recipe.title} should be ready! Meow~`,
+            [{ text: "Yay! 🐾" }]
           );
           return 0;
         }
@@ -176,13 +181,14 @@ export default function RecipeDetailScreen() {
       <View
         style={{
           flex: 1,
-          backgroundColor: COLORS.pink,
+          backgroundColor: COLORS.bg,
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <Text style={{ fontSize: 18, color: COLORS.dark }}>
-          Recipe not found 😢
+        <Text style={{ fontSize: 50 }}>🐱</Text>
+        <Text style={{ fontSize: 18, color: COLORS.white, marginTop: 12 }}>
+          Recipe not found
         </Text>
       </View>
     );
@@ -196,7 +202,7 @@ export default function RecipeDetailScreen() {
       : COLORS.rose;
 
   return (
-    <View style={{ flex: 1, backgroundColor: COLORS.pink }}>
+    <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
       <FloatingHearts trigger={heartTrigger} />
       <ConfettiExplosion trigger={confettiTrigger} />
 
@@ -209,22 +215,19 @@ export default function RecipeDetailScreen() {
         <View style={{ position: "relative" }}>
           <Image
             source={{ uri: recipe.image }}
-            style={{
-              width: SCREEN_WIDTH,
-              height: SCREEN_HEIGHT * 0.42,
-            }}
+            style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT * 0.42 }}
             contentFit="cover"
             transition={400}
           />
 
-          {/* Gradient overlay at bottom */}
+          {/* Dark overlay */}
           <View
             style={{
               position: "absolute",
               bottom: 0,
               left: 0,
               right: 0,
-              height: 80,
+              height: 120,
               backgroundColor: "transparent",
             }}
           />
@@ -237,11 +240,39 @@ export default function RecipeDetailScreen() {
               left: 0,
               right: 0,
               height: 30,
-              backgroundColor: COLORS.pink,
+              backgroundColor: COLORS.bg,
               borderTopLeftRadius: 30,
               borderTopRightRadius: 30,
             }}
           />
+
+          {/* Pro lock overlay */}
+          {isLocked && (
+            <View
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 30,
+                backgroundColor: "rgba(0,0,0,0.5)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Lock size={40} color={COLORS.gold} />
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "800",
+                  color: COLORS.gold,
+                  marginTop: 8,
+                }}
+              >
+                PRO Recipe
+              </Text>
+            </View>
+          )}
 
           {/* Top buttons */}
           <View
@@ -262,14 +293,14 @@ export default function RecipeDetailScreen() {
                   width: 42,
                   height: 42,
                   borderRadius: 21,
-                  backgroundColor: "rgba(255,255,255,0.9)",
+                  backgroundColor: COLORS.bgCard + "E6",
                   alignItems: "center",
                   justifyContent: "center",
                   ...SHADOWS.button,
                 },
               ]}
             >
-              <ArrowLeft size={22} color={COLORS.dark} />
+              <ArrowLeft size={22} color={COLORS.white} />
             </AnimatedPressable>
 
             <View style={{ flexDirection: "row", gap: 10 }}>
@@ -278,13 +309,13 @@ export default function RecipeDetailScreen() {
                   width: 42,
                   height: 42,
                   borderRadius: 21,
-                  backgroundColor: "rgba(255,255,255,0.9)",
+                  backgroundColor: COLORS.bgCard + "E6",
                   alignItems: "center",
                   justifyContent: "center",
                   ...SHADOWS.button,
                 }}
               >
-                <Share2 size={20} color={COLORS.dark} />
+                <Share2 size={20} color={COLORS.white} />
               </Pressable>
 
               <AnimatedPressable
@@ -297,7 +328,7 @@ export default function RecipeDetailScreen() {
                     borderRadius: 21,
                     backgroundColor: favorited
                       ? COLORS.hotpink
-                      : "rgba(255,255,255,0.9)",
+                      : COLORS.bgCard + "E6",
                     alignItems: "center",
                     justifyContent: "center",
                     ...SHADOWS.button,
@@ -306,8 +337,8 @@ export default function RecipeDetailScreen() {
               >
                 <Heart
                   size={20}
-                  color={favorited ? COLORS.white : COLORS.hotpink}
-                  fill={favorited ? COLORS.white : "transparent"}
+                  color={favorited ? "#FFF" : COLORS.hotpink}
+                  fill={favorited ? "#FFF" : "transparent"}
                 />
               </AnimatedPressable>
             </View>
@@ -318,16 +349,33 @@ export default function RecipeDetailScreen() {
         <View style={{ paddingHorizontal: 20, marginTop: -4 }}>
           {/* Title & Rating */}
           <Animated.View entering={FadeInDown.delay(100).duration(500)}>
-            <Text
-              style={{
-                fontSize: 26,
-                fontWeight: "800",
-                color: COLORS.dark,
-                lineHeight: 32,
-              }}
-            >
-              {recipe.title}
-            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Text
+                style={{
+                  fontSize: 26,
+                  fontWeight: "800",
+                  color: COLORS.white,
+                  lineHeight: 32,
+                  flex: 1,
+                }}
+              >
+                {recipe.title}
+              </Text>
+              {recipe.isPro && (
+                <View
+                  style={{
+                    backgroundColor: COLORS.gold,
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    borderRadius: 8,
+                  }}
+                >
+                  <Text style={{ fontSize: 10, fontWeight: "800", color: COLORS.bg }}>
+                    PRO
+                  </Text>
+                </View>
+              )}
+            </View>
             <View
               style={{
                 flexDirection: "row",
@@ -336,14 +384,8 @@ export default function RecipeDetailScreen() {
                 marginTop: 8,
               }}
             >
-              <Star size={16} color="#FDE68A" fill="#FDE68A" />
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "700",
-                  color: COLORS.dark,
-                }}
-              >
+              <Star size={16} color={COLORS.butter} fill={COLORS.butter} />
+              <Text style={{ fontSize: 14, fontWeight: "700", color: COLORS.white }}>
                 {recipe.rating}
               </Text>
               <Text style={{ fontSize: 13, color: COLORS.gray }}>
@@ -355,17 +397,13 @@ export default function RecipeDetailScreen() {
           {/* Info badges */}
           <Animated.View
             entering={FadeInDown.delay(200).duration(500)}
-            style={{
-              flexDirection: "row",
-              marginTop: 16,
-              gap: 10,
-            }}
+            style={{ flexDirection: "row", marginTop: 16, gap: 10 }}
           >
             <View
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                backgroundColor: COLORS.hotpink + "15",
+                backgroundColor: COLORS.hotpink + "20",
                 paddingHorizontal: 14,
                 paddingVertical: 10,
                 borderRadius: 16,
@@ -373,13 +411,7 @@ export default function RecipeDetailScreen() {
               }}
             >
               <Clock size={16} color={COLORS.hotpink} />
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: "700",
-                  color: COLORS.hotpink,
-                }}
-              >
+              <Text style={{ fontSize: 13, fontWeight: "700", color: COLORS.hotpink }}>
                 {recipe.time}
               </Text>
             </View>
@@ -387,7 +419,7 @@ export default function RecipeDetailScreen() {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                backgroundColor: difficultyColor + "25",
+                backgroundColor: difficultyColor + "20",
                 paddingHorizontal: 14,
                 paddingVertical: 10,
                 borderRadius: 16,
@@ -395,13 +427,7 @@ export default function RecipeDetailScreen() {
               }}
             >
               <ChefHat size={16} color={difficultyColor} />
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: "700",
-                  color: difficultyColor,
-                }}
-              >
+              <Text style={{ fontSize: 13, fontWeight: "700", color: difficultyColor }}>
                 {recipe.difficulty}
               </Text>
             </View>
@@ -409,21 +435,15 @@ export default function RecipeDetailScreen() {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                backgroundColor: COLORS.lavender + "30",
+                backgroundColor: COLORS.lavender + "20",
                 paddingHorizontal: 14,
                 paddingVertical: 10,
                 borderRadius: 16,
                 gap: 6,
               }}
             >
-              <Users size={16} color="#7C3AED" />
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: "700",
-                  color: "#7C3AED",
-                }}
-              >
+              <Users size={16} color={COLORS.lavender} />
+              <Text style={{ fontSize: 13, fontWeight: "700", color: COLORS.lavender }}>
                 {servings}
               </Text>
             </View>
@@ -443,269 +463,316 @@ export default function RecipeDetailScreen() {
             </Text>
           </Animated.View>
 
-          {/* Servings stepper */}
-          <Animated.View
-            entering={FadeInDown.delay(300).duration(500)}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              backgroundColor: COLORS.white,
-              borderRadius: 20,
-              padding: 16,
-              marginTop: 20,
-              ...SHADOWS.soft,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 15,
-                fontWeight: "700",
-                color: COLORS.dark,
-              }}
-            >
-              Servings 🍽️
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 14,
-              }}
-            >
+          {/* Pro lock wall */}
+          {isLocked ? (
+            <Animated.View entering={FadeInDown.delay(300).duration(500)}>
               <Pressable
-                onPress={() => adjustServings(-1)}
+                onPress={() => router.push("/pro")}
                 style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 18,
-                  backgroundColor: COLORS.hotpink + "15",
+                  backgroundColor: COLORS.bgCard,
+                  borderRadius: 24,
+                  padding: 28,
+                  marginTop: 24,
                   alignItems: "center",
-                  justifyContent: "center",
+                  borderWidth: 1,
+                  borderColor: COLORS.gold + "40",
+                  ...SHADOWS.card,
                 }}
               >
-                <Minus size={18} color={COLORS.hotpink} />
-              </Pressable>
-              <Text
-                style={{
-                  fontSize: 20,
-                  fontWeight: "800",
-                  color: COLORS.hotpink,
-                  minWidth: 30,
-                  textAlign: "center",
-                }}
-              >
-                {servings}
-              </Text>
-              <Pressable
-                onPress={() => adjustServings(1)}
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 18,
-                  backgroundColor: COLORS.hotpink,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Plus size={18} color={COLORS.white} />
-              </Pressable>
-            </View>
-          </Animated.View>
-
-          {/* Ingredients */}
-          <Animated.View
-            entering={FadeInDown.delay(400).duration(500)}
-            style={{ marginTop: 24 }}
-          >
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "800",
-                color: COLORS.dark,
-                marginBottom: 14,
-              }}
-            >
-              Ingredients 🧂
-            </Text>
-            {recipe.ingredients.map((ingredient, index) => {
-              const checked = isIngredientChecked(recipe.id, index);
-              return (
-                <Pressable
-                  key={index}
-                  onPress={() => {
-                    toggleIngredient(recipe.id, index);
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                <Text style={{ fontSize: 48 }}>🔒</Text>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "800",
+                    color: COLORS.gold,
+                    marginTop: 12,
                   }}
+                >
+                  Pro Recipe
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: COLORS.gray,
+                    textAlign: "center",
+                    marginTop: 8,
+                    lineHeight: 20,
+                  }}
+                >
+                  Upgrade to Pro to unlock this recipe's ingredients and steps 🐱
+                </Text>
+                <View
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
-                    backgroundColor: COLORS.white,
-                    borderRadius: 16,
-                    padding: 14,
-                    marginBottom: 8,
-                    gap: 12,
-                    ...SHADOWS.soft,
+                    backgroundColor: COLORS.gold,
+                    paddingHorizontal: 24,
+                    paddingVertical: 14,
+                    borderRadius: 20,
+                    marginTop: 20,
+                    gap: 8,
                   }}
                 >
-                  <View
+                  <Crown size={18} color={COLORS.bg} />
+                  <Text style={{ fontSize: 15, fontWeight: "800", color: COLORS.bg }}>
+                    Unlock with Pro
+                  </Text>
+                </View>
+              </Pressable>
+            </Animated.View>
+          ) : (
+            <>
+              {/* Servings stepper */}
+              <Animated.View
+                entering={FadeInDown.delay(300).duration(500)}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  backgroundColor: COLORS.bgCard,
+                  borderRadius: 20,
+                  padding: 16,
+                  marginTop: 20,
+                  ...SHADOWS.soft,
+                }}
+              >
+                <View>
+                  <Text style={{ fontSize: 15, fontWeight: "700", color: COLORS.white }}>
+                    Servings 🐾
+                  </Text>
+                  <Text style={{ fontSize: 11, color: COLORS.gray, marginTop: 2 }}>
+                    Ingredients auto-scale!
+                  </Text>
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+                  <Pressable
+                    onPress={() => adjustServings(-1)}
                     style={{
-                      width: 26,
-                      height: 26,
-                      borderRadius: 13,
-                      borderWidth: 2,
-                      borderColor: checked ? COLORS.mint : COLORS.blush,
-                      backgroundColor: checked ? COLORS.mint : "transparent",
+                      width: 36,
+                      height: 36,
+                      borderRadius: 18,
+                      backgroundColor: COLORS.hotpink + "20",
                       alignItems: "center",
                       justifyContent: "center",
                     }}
                   >
-                    {checked && <Check size={14} color={COLORS.white} />}
-                  </View>
+                    <Minus size={18} color={COLORS.hotpink} />
+                  </Pressable>
                   <Text
                     style={{
-                      flex: 1,
-                      fontSize: 14,
-                      color: checked ? COLORS.gray : COLORS.dark,
-                      textDecorationLine: checked ? "line-through" : "none",
-                      lineHeight: 20,
-                    }}
-                  >
-                    {ingredient}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </Animated.View>
-
-          {/* Steps */}
-          <Animated.View
-            entering={FadeInDown.delay(500).duration(500)}
-            style={{ marginTop: 24 }}
-          >
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "800",
-                color: COLORS.dark,
-                marginBottom: 14,
-              }}
-            >
-              Steps 👩‍🍳
-            </Text>
-            {recipe.steps.map((step, index) => (
-              <View
-                key={index}
-                style={{
-                  flexDirection: "row",
-                  backgroundColor: COLORS.white,
-                  borderRadius: 20,
-                  padding: 16,
-                  marginBottom: 10,
-                  gap: 14,
-                  ...SHADOWS.soft,
-                }}
-              >
-                <View
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 16,
-                    backgroundColor: COLORS.hotpink,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 14,
+                      fontSize: 20,
                       fontWeight: "800",
-                      color: COLORS.white,
+                      color: COLORS.hotpink,
+                      minWidth: 30,
+                      textAlign: "center",
                     }}
                   >
-                    {index + 1}
+                    {servings}
                   </Text>
+                  <Pressable
+                    onPress={() => adjustServings(1)}
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 18,
+                      backgroundColor: COLORS.hotpink,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Plus size={18} color="#FFF" />
+                  </Pressable>
                 </View>
+              </Animated.View>
+
+              {/* Ingredients with auto-scaling */}
+              <Animated.View
+                entering={FadeInDown.delay(400).duration(500)}
+                style={{ marginTop: 24 }}
+              >
                 <Text
                   style={{
-                    flex: 1,
-                    fontSize: 14,
-                    color: COLORS.dark,
-                    lineHeight: 22,
+                    fontSize: 18,
+                    fontWeight: "800",
+                    color: COLORS.white,
+                    marginBottom: 14,
                   }}
                 >
-                  {step}
+                  Ingredients 🧂
                 </Text>
-              </View>
-            ))}
-          </Animated.View>
+                {recipe.ingredients.map((ingredient, index) => {
+                  const checked = isIngredientChecked(recipe.id, index);
+                  const scaled = scaleIngredient(
+                    ingredient,
+                    recipe.servings,
+                    servings
+                  );
+                  return (
+                    <Pressable
+                      key={index}
+                      onPress={() => {
+                        toggleIngredient(recipe.id, index);
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        backgroundColor: COLORS.bgCard,
+                        borderRadius: 16,
+                        padding: 14,
+                        marginBottom: 8,
+                        gap: 12,
+                        ...SHADOWS.soft,
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 26,
+                          height: 26,
+                          borderRadius: 13,
+                          borderWidth: 2,
+                          borderColor: checked ? COLORS.mint : COLORS.hotpink + "50",
+                          backgroundColor: checked ? COLORS.mint : "transparent",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {checked && <Check size={14} color="#FFF" />}
+                      </View>
+                      <Text
+                        style={{
+                          flex: 1,
+                          fontSize: 14,
+                          color: checked ? COLORS.gray : COLORS.white,
+                          textDecorationLine: checked ? "line-through" : "none",
+                          lineHeight: 20,
+                        }}
+                      >
+                        {scaled}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </Animated.View>
 
-          {/* Baking Timer Button */}
-          <Animated.View
-            entering={SlideInDown.delay(600).duration(600)}
-            style={{ marginTop: 24, marginBottom: 20 }}
-          >
-            <Pressable
-              onPress={startTimer}
-              style={{
-                backgroundColor: timerRunning ? COLORS.rose : COLORS.hotpink,
-                borderRadius: 24,
-                paddingVertical: 18,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 10,
-                ...SHADOWS.button,
-              }}
-            >
-              <Timer size={22} color={COLORS.white} />
-              <Text
-                style={{
-                  fontSize: 17,
-                  fontWeight: "800",
-                  color: COLORS.white,
-                }}
+              {/* Steps */}
+              <Animated.View
+                entering={FadeInDown.delay(500).duration(500)}
+                style={{ marginTop: 24 }}
               >
-                {timerRunning
-                  ? `⏱ ${formatTime(timerSeconds)} — Tap to Stop`
-                  : `Start Baking Timer ✨`}
-              </Text>
-            </Pressable>
-          </Animated.View>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "800",
+                    color: COLORS.white,
+                    marginBottom: 14,
+                  }}
+                >
+                  Steps 🐱
+                </Text>
+                {recipe.steps.map((step, index) => (
+                  <View
+                    key={index}
+                    style={{
+                      flexDirection: "row",
+                      backgroundColor: COLORS.bgCard,
+                      borderRadius: 20,
+                      padding: 16,
+                      marginBottom: 10,
+                      gap: 14,
+                      ...SHADOWS.soft,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 16,
+                        backgroundColor: COLORS.hotpink,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFF" }}>
+                        {index + 1}
+                      </Text>
+                    </View>
+                    <Text
+                      style={{
+                        flex: 1,
+                        fontSize: 14,
+                        color: COLORS.white,
+                        lineHeight: 22,
+                      }}
+                    >
+                      {step}
+                    </Text>
+                  </View>
+                ))}
+              </Animated.View>
 
-          {/* Big Favorite Button */}
-          <Animated.View entering={SlideInDown.delay(700).duration(600)}>
-            <Pressable
-              onPress={handleFavorite}
-              style={{
-                backgroundColor: favorited ? COLORS.hotpink : COLORS.white,
-                borderRadius: 24,
-                paddingVertical: 18,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 10,
-                borderWidth: favorited ? 0 : 2,
-                borderColor: COLORS.hotpink,
-                ...SHADOWS.button,
-              }}
-            >
-              <Heart
-                size={22}
-                color={favorited ? COLORS.white : COLORS.hotpink}
-                fill={favorited ? COLORS.white : "transparent"}
-              />
-              <Text
-                style={{
-                  fontSize: 17,
-                  fontWeight: "800",
-                  color: favorited ? COLORS.white : COLORS.hotpink,
-                }}
+              {/* Baking Timer */}
+              <Animated.View
+                entering={SlideInDown.delay(600).duration(600)}
+                style={{ marginTop: 24, marginBottom: 20 }}
               >
-                {favorited ? "Saved to Favorites 💖" : "Add to Favorites"}
-              </Text>
-            </Pressable>
-          </Animated.View>
+                <Pressable
+                  onPress={startTimer}
+                  style={{
+                    backgroundColor: timerRunning ? COLORS.rose : COLORS.hotpink,
+                    borderRadius: 24,
+                    paddingVertical: 18,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 10,
+                    ...SHADOWS.button,
+                  }}
+                >
+                  <Timer size={22} color="#FFF" />
+                  <Text style={{ fontSize: 17, fontWeight: "800", color: "#FFF" }}>
+                    {timerRunning
+                      ? `${formatTime(timerSeconds)} - Tap to Stop`
+                      : `Start Baking Timer`}
+                  </Text>
+                </Pressable>
+              </Animated.View>
+
+              {/* Big Favorite Button */}
+              <Animated.View entering={SlideInDown.delay(700).duration(600)}>
+                <Pressable
+                  onPress={handleFavorite}
+                  style={{
+                    backgroundColor: favorited ? COLORS.hotpink : COLORS.bgCard,
+                    borderRadius: 24,
+                    paddingVertical: 18,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 10,
+                    borderWidth: favorited ? 0 : 2,
+                    borderColor: COLORS.hotpink,
+                    ...SHADOWS.button,
+                  }}
+                >
+                  <Heart
+                    size={22}
+                    color={favorited ? "#FFF" : COLORS.hotpink}
+                    fill={favorited ? "#FFF" : "transparent"}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 17,
+                      fontWeight: "800",
+                      color: favorited ? "#FFF" : COLORS.hotpink,
+                    }}
+                  >
+                    {favorited ? "Saved to Favorites 🐾" : "Add to Favorites"}
+                  </Text>
+                </Pressable>
+              </Animated.View>
+            </>
+          )}
         </View>
       </ScrollView>
     </View>

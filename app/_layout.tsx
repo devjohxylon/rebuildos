@@ -4,7 +4,6 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import * as SplashScreen from "expo-splash-screen";
-import { View, Text } from "react-native";
 import { COLORS } from "@/constants/theme";
 
 SplashScreen.preventAutoHideAsync();
@@ -18,18 +17,33 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: COLORS.pink }}>
-      <StatusBar style="dark" />
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: COLORS.bg }}>
+      <StatusBar style="light" />
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: COLORS.pink },
+          contentStyle: { backgroundColor: COLORS.bg },
           animation: "slide_from_right",
         }}
       >
+        <Stack.Screen name="auth" options={{ animation: "fade" }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="recipe/[id]"
+          options={{
+            presentation: "modal",
+            animation: "slide_from_bottom",
+          }}
+        />
+        <Stack.Screen
+          name="add-recipe"
+          options={{
+            presentation: "modal",
+            animation: "slide_from_bottom",
+          }}
+        />
+        <Stack.Screen
+          name="pro"
           options={{
             presentation: "modal",
             animation: "slide_from_bottom",

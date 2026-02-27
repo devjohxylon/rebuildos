@@ -1,7 +1,7 @@
 import React from "react";
 import { Tabs } from "expo-router";
 import { View, Text } from "react-native";
-import { Home, Search, Heart, ChefHat } from "lucide-react-native";
+import { Home, Search, Heart, ChefHat, Package } from "lucide-react-native";
 import { COLORS } from "@/constants/theme";
 
 interface TabIconProps {
@@ -97,6 +97,23 @@ export default function TabLayout() {
                 />
               }
               label="Explore"
+              focused={focused}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="pantry"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabIcon
+              icon={
+                <Package
+                  size={22}
+                  color={focused ? COLORS.hotpink : COLORS.gray}
+                />
+              }
+              label="Pantry"
               focused={focused}
             />
           ),

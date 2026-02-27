@@ -34,13 +34,16 @@ import {
   Share2,
   Lock,
   Crown,
+  ShoppingCart,
 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { COLORS, SHADOWS } from "@/constants/theme";
 import { RECIPES } from "@/constants/recipes";
 import { useRecipeStore } from "@/store/useRecipeStore";
 import { useProStore } from "@/store/useProStore";
+import { usePantryStore } from "@/store/usePantryStore";
 import { scaleIngredient } from "@/utils/scaleIngredient";
+import { getRecipeMatch } from "@/constants/ingredients";
 import FloatingHearts from "@/components/FloatingHearts";
 import ConfettiExplosion from "@/components/ConfettiExplosion";
 
@@ -62,6 +65,7 @@ export default function RecipeDetailScreen() {
 
   const { isFavorite, toggleFavorite, toggleIngredient, isIngredientChecked } =
     useRecipeStore();
+  const { pantryItems, addToGroceryList } = usePantryStore();
 
   const [servings, setServings] = useState(recipe?.servings ?? 4);
   const [heartTrigger, setHeartTrigger] = useState(0);
@@ -738,8 +742,78 @@ export default function RecipeDetailScreen() {
                 </Pressable>
               </Animated.View>
 
+              {/* Add to Grocery List Button */}
+              <Animated.View
+                entering={SlideInDown.delay(700).duration(600)}
+                style={{ marginBottom: 12 }}
+              >
+                <Pressable
+                  onPress={() => {
+                    if (!recipe) return;
+                    const match = getRecipeMatch(
+                      recipe.ingredients,
+                      pantryItems
+                    );
+                    const missingItems = match.missing;
+                    if (missingItems.length === 0) {
+                      Alert.alert(
+                        "You have everything! 🎉",
+                        "All ingredients are in your pantry. Time to bake!",
+                        [{ text: "Let's go! 🐾" }]
+                      );
+                      return;
+                    }
+                    addToGroceryList(
+                      missingItems.map((name) => ({
+                        name,
+                        recipeId: recipe.id,
+                        recipeTitle: recipe.title,
+                      }))
+                    );
+                    Haptics.notificationAsync(
+                      Haptics.NotificationFeedbackType.Success
+                    );
+                    Alert.alert(
+                      "Added to Grocery List! 🛒",
+                      `${missingItems.length} missing ingredient${
+                        missingItems.length !== 1 ? "s" : ""
+                      } added to your list.`,
+                      [
+                        { text: "OK" },
+                        {
+                          text: "View List",
+                          onPress: () => router.push("/grocery"),
+                        },
+                      ]
+                    );
+                  }}
+                  style={{
+                    backgroundColor: COLORS.mint + "20",
+                    borderRadius: 24,
+                    paddingVertical: 18,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 10,
+                    borderWidth: 2,
+                    borderColor: COLORS.mint,
+                  }}
+                >
+                  <ShoppingCart size={20} color={COLORS.mint} />
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "800",
+                      color: COLORS.mint,
+                    }}
+                  >
+                    Add Missing to Grocery List
+                  </Text>
+                </Pressable>
+              </Animated.View>
+
               {/* Big Favorite Button */}
-              <Animated.View entering={SlideInDown.delay(700).duration(600)}>
+              <Animated.View entering={SlideInDown.delay(800).duration(600)}>
                 <Pressable
                   onPress={handleFavorite}
                   style={{

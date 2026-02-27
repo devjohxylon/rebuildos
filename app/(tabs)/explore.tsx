@@ -40,7 +40,8 @@ export default function ExploreScreen() {
         (r) =>
           r.title.toLowerCase().includes(q) ||
           r.description.toLowerCase().includes(q) ||
-          r.category.toLowerCase().includes(q)
+          r.category.toLowerCase().includes(q) ||
+          r.ingredients.some((ing) => ing.toLowerCase().includes(q))
       );
     }
 
